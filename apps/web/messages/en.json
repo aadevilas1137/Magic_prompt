@@ -1,0 +1,23 @@
+{
+  "app": {
+    "name": "Magic Prompt AI",
+    "tagline": "AI prompts, perfected."
+  },
+  "chat": {
+    "title": "Chat",
+    "placeholder": "Ask anything… (Phase 1 placeholder — chat is not wired yet)",
+    "send": "Send",
+    "phase1Notice": "Phase 1 placeholder — chat is not yet wired."
+  },
+  "nav": {
+    "home": "Home",
+    "chat": "Chat"
+  },
+  "errors": {
+    "generic": "Something went wrong",
+    "tryAgain": "Try again",
+    "notFoundTitle": "Page not found",
+    "notFoundBody": "The page you're looking for doesn't exist.",
+    "goHome": "Go home"
+  }
+}

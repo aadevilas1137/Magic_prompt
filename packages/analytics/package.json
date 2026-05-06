@@ -1,0 +1,31 @@
+{
+  "name": "@magic-prompt/analytics",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf .turbo *.tsbuildinfo"
+  },
+  "dependencies": {
+    "posthog-js": "^1.203.0",
+    "posthog-node": "^4.4.0"
+  },
+  "devDependencies": {
+    "@magic-prompt/eslint-config": "workspace:*",
+    "@magic-prompt/tsconfig": "workspace:*",
+    "eslint": "^9.17.0",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.7.2"
+  }
+}
