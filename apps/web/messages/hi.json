@@ -1,0 +1,86 @@
+{
+  "_note": "PHASE 2 — first-pass machine-quality Hindi translation. Native-speaker review required before production. See temp_folder/PHASE_2_REPORT.md.",
+  "app": {
+    "name": "Magic Prompt AI",
+    "tagline": "AI प्रॉम्प्ट, परिपूर्ण बनाए गए।"
+  },
+  "nav": {
+    "home": "होम",
+    "chat": "चैट",
+    "signIn": "साइन इन",
+    "signUp": "साइन अप",
+    "logout": "लॉग आउट"
+  },
+  "chat": {
+    "title": "चैट",
+    "placeholder": "कुछ भी पूछें… (चरण 1 प्लेसहोल्डर — चैट अभी जुड़ा नहीं है)",
+    "send": "भेजें",
+    "phase1Notice": "चरण 1 प्लेसहोल्डर — चैट अभी जुड़ी नहीं है।"
+  },
+  "auth": {
+    "login": {
+      "title": "फिर से स्वागत है",
+      "description": "अपने Magic Prompt खाते में साइन इन करें।",
+      "footerNoAccount": "खाता नहीं है?",
+      "submit": "साइन इन",
+      "submitPending": "साइन इन हो रहा है…"
+    },
+    "signup": {
+      "title": "अपना खाता बनाएं",
+      "description": "कुछ मिनटों में Magic Prompt का उपयोग शुरू करें — क्रेडिट कार्ड की जरूरत नहीं।",
+      "footerHaveAccount": "पहले से खाता है?",
+      "submit": "खाता बनाएं",
+      "submitPending": "खाता बन रहा है…"
+    },
+    "forgot": {
+      "title": "पासवर्ड भूल गए?",
+      "description": "अपने खाते से जुड़ा ईमेल दर्ज करें और हम आपको रीसेट लिंक भेजेंगे।",
+      "footerRemembered": "याद आ गया?",
+      "submit": "रीसेट लिंक भेजें",
+      "submitPending": "भेजा जा रहा है…",
+      "successGeneric": "यदि उस ईमेल का खाता मौजूद है, तो रीसेट लिंक भेज दिया गया है।"
+    },
+    "reset": {
+      "title": "नया पासवर्ड चुनें",
+      "description": "नीचे अपना नया पासवर्ड दर्ज करें। सहेजने पर आप साइन इन हो जाएंगे।",
+      "submit": "पासवर्ड अपडेट करें",
+      "submitPending": "अपडेट हो रहा है…"
+    },
+    "verify": {
+      "title": "अपना इनबॉक्स चेक करें",
+      "descriptionWithEmail": "हमने {email} पर एक सत्यापन लिंक भेजा है। साइनअप पूरा करने के लिए उस पर क्लिक करें।",
+      "descriptionGeneric": "हमने आपको एक सत्यापन लिंक भेजा है। साइनअप पूरा करने के लिए उस पर क्लिक करें।",
+      "wrongEmail": "गलत ईमेल?",
+      "signupAgain": "पुनः साइन अप करें",
+      "expiry": "लिंक 1 घंटे में समाप्त हो जाएगा। यदि ईमेल नहीं मिलता है तो स्पैम चेक करें — या",
+      "signInHere": "यहां साइन इन करें",
+      "alreadyVerified": "यदि आपने पहले से सत्यापित कर लिया है।",
+      "back": "साइन इन पर वापस जाएं"
+    },
+    "fields": {
+      "email": "ईमेल",
+      "password": "पासवर्ड",
+      "confirmPassword": "पासवर्ड की पुष्टि करें",
+      "newPassword": "नया पासवर्ड",
+      "confirmNewPassword": "नए पासवर्ड की पुष्टि करें",
+      "forgotLink": "पासवर्ड भूल गए?",
+      "tos": "मैं सेवा की शर्तों और गोपनीयता नीति को स्वीकार करता हूं।"
+    },
+    "google": "Google के साथ जारी रखें",
+    "googlePending": "कनेक्ट हो रहा है…",
+    "or": "या",
+    "userMenu": {
+      "signedInAs": "इस रूप में साइन इन",
+      "profile": "प्रोफ़ाइल",
+      "settings": "सेटिंग्स",
+      "soon": "जल्द"
+    }
+  },
+  "errors": {
+    "generic": "कुछ गलत हो गया",
+    "tryAgain": "पुनः प्रयास करें",
+    "notFoundTitle": "पेज नहीं मिला",
+    "notFoundBody": "जिस पेज की आप तलाश कर रहे हैं वह मौजूद नहीं है।",
+    "goHome": "होम पर जाएं"
+  }
+}

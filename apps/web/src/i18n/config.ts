@@ -1,6 +1,9 @@
-export const locales = ['en'] as const;
-export const defaultLocale = 'en';
+// Re-export the routing config so existing imports of {locales, defaultLocale}
+// keep working. New code should import from `./routing` directly.
+export { routing } from './routing';
+export type { Locale } from './routing';
 
-export type Locale = (typeof locales)[number];
+import { routing } from './routing';
 
-// Phase 2 will add 'hi'. The folder + config keep that addition cheap.
+export const locales = routing.locales;
+export const defaultLocale = routing.defaultLocale;

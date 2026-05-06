@@ -1,23 +1,20 @@
-import { getRequestConfig, type GetRequestConfigParams } from 'next-intl/server';
+import { getRequestConfig } from 'next-intl/server';
 
-import { defaultLocale, type Locale } from './config';
+import { routing, type Locale } from './routing';
 
 type Messages = Record<string, unknown>;
 
-async function loadMessages(locale: Locale): Promise<Messages> {
-  const mod = (await import(`../../messages/${locale}.json`)) as { default: Messages };
-  return mod.default;
+function isSupportedLocale(value: unknown): value is Locale {
+  return typeof value === 'string' && (routing.locales as readonly string[]).includes(value);
 }
 
-export default getRequestConfig(async (_params: GetRequestConfigParams) => {
-  const locale: Locale = defaultLocale;
-  const messages = await loadMessages(locale);
+export default getRequestConfig(async ({ requestLocale }) => {
+  const requested = await requestLocale;
+  const locale: Locale = isSupportedLocale(requested) ? requested : routing.defaultLocale;
+  const mod = (await import(`../../messages/${locale}.json`)) as { default: Messages };
   return {
     locale,
-    // next-intl's `AbstractIntlMessages` shape is recursive; our JSON is the
-    // shape it expects (string leaves, object branches). The cast is the
-    // narrowest annotation that satisfies the runtime contract.
-    messages: messages as Parameters<typeof getRequestConfig>[0] extends (
+    messages: mod.default as Parameters<typeof getRequestConfig>[0] extends (
       ...args: unknown[]
     ) => infer R
       ? R extends Promise<infer C>
