@@ -1,0 +1,12 @@
+node_modules
+.next
+.turbo
+dist
+build
+out
+coverage
+playwright-report
+test-results
+pnpm-lock.yaml
+*.tsbuildinfo
+temp_folder

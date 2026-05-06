@@ -1,0 +1,16 @@
+{
+  "name": "@magic-prompt/prettier-config",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "main": "./index.js",
+  "files": [
+    "index.js"
+  ],
+  "dependencies": {
+    "prettier-plugin-tailwindcss": "^0.6.9"
+  },
+  "peerDependencies": {
+    "prettier": "^3.0.0"
+  }
+}
