@@ -4,12 +4,30 @@ Drizzle ORM schema + client for the Supabase Postgres database.
 
 ## Tables
 
-| Table         | Purpose                                                | Public API? |
-| ------------- | ------------------------------------------------------ | ----------- |
-| `users`       | App-level users (1:1 with `auth.users`)                | Yes         |
-| `chats`       | A user's chat conversations                            | Yes         |
-| `messages`    | Messages within a chat (`role`: system/user/assistant) | Yes         |
-| `prompt_logs` | **INTERNAL** — IPE telemetry. Never exposed publicly.  | No          |
+| Table         | Purpose                                                       | Public API? | RLS                                                                       |
+| ------------- | ------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------- |
+| `users`       | App-level users (1:1 with `auth.users`, populated by trigger) | Yes         | self-only SELECT/UPDATE; no INSERT policy (trigger uses SECURITY DEFINER) |
+| `chats`       | A user's chat conversations                                   | Yes         | full CRUD scoped to `auth.uid() = user_id`                                |
+| `messages`    | Messages within a chat (`role`: system/user/assistant)        | Yes         | SELECT/INSERT/DELETE via chat-ownership join; UPDATE denied (immutable)   |
+| `prompt_logs` | **INTERNAL** — IPE telemetry. Never exposed publicly.         | No          | `RESTRICTIVE` deny-all; service-role bypasses RLS                         |
+
+## Auth trigger + RLS (Phase 2)
+
+A second migration (`migrations/0001_auth_trigger_and_rls.sql`) was hand-written to add:
+
+- **`public.handle_new_user()` function + `on_auth_user_created` trigger** — every row inserted into `auth.users` (Supabase auth schema) auto-creates a matching `public.users` row with the same `id` and `email`. The function runs as `SECURITY DEFINER` so it can bypass the RLS that prevents direct client inserts.
+- **`ENABLE` + `FORCE ROW LEVEL SECURITY`** on all 4 public tables.
+- **10 policies total** — see [`ADR-0007`](../../docs/architecture/ADR/0007-rls-policy-design.md) for the full per-table breakdown.
+
+Drizzle-kit doesn't generate triggers/RLS, so the SQL is hand-rolled. Idempotent (`CREATE OR REPLACE`, `DROP POLICY IF EXISTS`) so re-running is safe.
+
+**Verify RLS is working** any time:
+
+```bash
+pnpm tsx tooling/scripts/verify-rls.ts
+```
+
+It connects with the anon key and confirms every table returns 0 rows. Exit code 1 if any table leaks data — wire into CI to catch regressions.
 
 ## Two-URL pattern (`DATABASE_URL` vs `MIGRATE_DATABASE_URL`)
 

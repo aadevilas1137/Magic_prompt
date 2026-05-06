@@ -89,3 +89,17 @@ Validate at every boundary with Zod:
 - Validate every external input. Treat anything from the network as hostile.
 - The Supabase **service role key** is server-only. Never import it into a client file.
 - The Drizzle `prompt_logs` table is internal. No public route reads from it without a deliberate ADR.
+
+## Auth (Phase 2+)
+
+The full architecture lives in [`docs/architecture/ADR/0006-auth-flow.md`](architecture/ADR/0006-auth-flow.md) and [`ADR-0007`](architecture/ADR/0007-rls-policy-design.md). Day-to-day rules:
+
+- **Authorization always uses `getUser()`, never `getSession()`.** `getSession()` trusts the cookie blindly; `getUser()` round-trips to Supabase to validate. Use the latter from `@/lib/auth/get-user` in any code that gates access.
+- **Server-only files import `'server-only'` at the top.** That's the runtime fence. Don't import server modules into client files.
+- **Forms call Server Actions, not API routes.** New auth-adjacent flows go in `apps/web/src/features/auth/actions/` and follow the existing pattern: Zod validate → rate-limit → Supabase call → `mapSupabaseAuthError` → Pino log + PostHog track → `redirect`.
+- **Never expose raw Supabase error messages to the browser.** Always route them through `mapSupabaseAuthError`. Unknown codes fall back to a generic message; the original is attached as `cause` for server-side logs.
+- **Open-redirect protection.** Use `safeRedirect()` from `@/features/auth/lib/safe-redirect` whenever a redirect target comes from user input (URL param, form field, header).
+- **Rate limiting.** Every auth-mutating action calls `checkRateLimit(name, ip:email, RateLimits[name])` BEFORE the Supabase call. Pre-configured limits live in `RateLimits` — adjust there, not in call sites.
+- **No PII in logs.** Email is OK (it's the user's identifier and shows up in toasts anyway). Never log passwords, tokens, magic links, or whatever the user typed into a form.
+- **Defense in depth: middleware + page guard + RLS.** Auth-required pages call `requireUser('/chat')` even though middleware already redirects unauthenticated visitors. RLS in the database is the third layer.
+- **`prompt_logs` has zero client access.** It's enforced by a `RESTRICTIVE` deny-all RLS policy. Service-role-only writes from the IPE pipeline (Phase 4+).

@@ -8,11 +8,17 @@ const config: PlaywrightTestConfig = {
   fullyParallel: true,
   forbidOnly: isCI,
   retries: isCI ? 2 : 0,
+  // Per-test timeout — bumped from the 30s default because Next.js dev's
+  // first-hit-per-route compile can take 30–60s in cold cache. Subsequent
+  // hits are sub-second.
+  timeout: 90 * 1000,
+  expect: { timeout: 10 * 1000 },
   reporter: isCI ? [['github'], ['html', { open: 'never' }]] : [['list']],
   use: {
     baseURL,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
+    navigationTimeout: 60 * 1000,
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
