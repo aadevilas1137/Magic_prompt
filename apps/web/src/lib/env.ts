@@ -22,7 +22,14 @@ const EnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: optionalUrl(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: optionalString(),
   SUPABASE_SERVICE_ROLE_KEY: optionalString(),
+  // Used at runtime by app code (server components, route handlers, server
+  // actions). May be the Transaction pooler (port 6543) — fine for serverless.
   DATABASE_URL: optionalString(),
+  // Used by drizzle-kit (migrations / schema introspection) only. Should be
+  // the Session pooler or Direct connection (port 5432) so prepared statements
+  // and DDL-in-transactions work. drizzle.config.ts falls back to DATABASE_URL
+  // when this is unset.
+  MIGRATE_DATABASE_URL: optionalString(),
 
   OPENAI_API_KEY: optionalString(),
 
