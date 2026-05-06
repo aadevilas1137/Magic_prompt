@@ -11,16 +11,28 @@ Drizzle ORM schema + client for the Supabase Postgres database.
 | `messages`    | Messages within a chat (`role`: system/user/assistant) | Yes         |
 | `prompt_logs` | **INTERNAL** — IPE telemetry. Never exposed publicly.  | No          |
 
+## Two-URL pattern (`DATABASE_URL` vs `MIGRATE_DATABASE_URL`)
+
+This package uses **two separate Postgres connection strings**, each tuned for a different lifecycle. **Configure both in `apps/web/.env.local`.**
+
+| Env var                | Used by                                                                                    | Recommended Supabase endpoint                                                                      | Why                                                                                                                                                                              |
+| ---------------------- | ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`         | App runtime (server components, route handlers, server actions via `createDatabaseClient`) | **Transaction pooler** — `aws-…pooler.supabase.com:6543`                                           | Best for serverless / Next.js — multiplexes many short-lived connections cheaply.                                                                                                |
+| `MIGRATE_DATABASE_URL` | `drizzle-kit` only (`db:generate`, `db:migrate`, `db:push`, `db:studio`)                   | **Session pooler** _or_ **Direct connection** — `…supabase.com:5432` / `db.<ref>.supabase.co:5432` | Drizzle migrations use prepared statements and DDL-in-transactions. The transaction pooler drops session state between statements and breaks both, so migrations need port 5432. |
+
+`drizzle.config.ts` reads `MIGRATE_DATABASE_URL` first and falls back to `DATABASE_URL` if not set — so single-URL setups (e.g. local dev with a direct connection only) still work.
+
 ## Local setup
 
 1. Create a Supabase project at https://app.supabase.com.
-2. Copy the connection string from **Project Settings → Database → URI** (use the `Transaction` pooler for serverless or `Session` for long-running).
-3. Set `DATABASE_URL` in your `.env.local`.
-4. Generate migrations:
+2. From **Project Settings → Database → Connection string** (newer UI: **Connect → ORMs**):
+   - Copy the **Transaction pooler** URI (port 6543) → set as `DATABASE_URL` in `apps/web/.env.local`.
+   - Copy the **Session pooler** _or_ **Direct connection** URI (port 5432) → set as `MIGRATE_DATABASE_URL` in the same file.
+3. Generate migrations:
    ```bash
    pnpm --filter @magic-prompt/database db:generate
    ```
-5. Apply them:
+4. Apply them:
    ```bash
    pnpm --filter @magic-prompt/database db:migrate
    ```
