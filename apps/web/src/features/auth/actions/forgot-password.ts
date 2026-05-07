@@ -4,6 +4,12 @@ import { ErrorCode } from '@magic-prompt/shared';
 
 import { type AuthActionState, authLogger, fieldErrorState, getClientIp } from './_shared';
 
+import {
+  anonDistinctId,
+  compactProperties,
+  getEmailDomain,
+  trackAuthEvent,
+} from '@/features/auth/lib/analytics';
 import { mapSupabaseAuthError } from '@/features/auth/lib/errors';
 import { RateLimits, checkRateLimit } from '@/features/auth/lib/rate-limit';
 import { ForgotPasswordSchema } from '@/features/auth/lib/validation';
@@ -28,6 +34,13 @@ export async function forgotPasswordAction(
   }
 
   const ip = getClientIp();
+  const emailDomain = getEmailDomain(parsed.data.email);
+  trackAuthEvent({
+    distinctId: anonDistinctId(ip),
+    event: 'auth.password.reset_requested',
+    properties: compactProperties({ emailDomain, ip }),
+  });
+
   const rateKey = `${ip}:${parsed.data.email}`;
   const rl = checkRateLimit('forgotPassword', rateKey, RateLimits.forgotPassword);
   if (!rl.allowed) {

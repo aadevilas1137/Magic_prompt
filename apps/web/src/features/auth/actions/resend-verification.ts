@@ -4,6 +4,12 @@ import { ErrorCode } from '@magic-prompt/shared';
 
 import { type AuthActionState, authLogger, fieldErrorState, getClientIp } from './_shared';
 
+import {
+  anonDistinctId,
+  compactProperties,
+  getEmailDomain,
+  trackAuthEvent,
+} from '@/features/auth/lib/analytics';
 import { mapSupabaseAuthError } from '@/features/auth/lib/errors';
 import { RateLimits, checkRateLimit } from '@/features/auth/lib/rate-limit';
 import { ForgotPasswordSchema } from '@/features/auth/lib/validation';
@@ -52,6 +58,11 @@ export async function resendVerificationAction(
   }
 
   log.info({ email: parsed.data.email }, 'verification email re-queued');
+  trackAuthEvent({
+    distinctId: anonDistinctId(ip),
+    event: 'auth.verify.resent',
+    properties: compactProperties({ emailDomain: getEmailDomain(parsed.data.email), ip }),
+  });
   return {
     status: 'success',
     message: 'Verification email re-sent. Please check your inbox.',
