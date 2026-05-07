@@ -33,7 +33,10 @@ if (isCI) {
     command: 'pnpm dev',
     url: baseURL,
     reuseExistingServer: true,
-    timeout: 120 * 1000,
+    // Cold compile of the [locale] route tree on this machine can exceed
+    // the 120s Playwright default. Bumped to 180s after Phase 2.5 added
+    // the analytics module + tracked-event paths through the actions.
+    timeout: 180 * 1000,
   };
 }
 

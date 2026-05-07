@@ -1,6 +1,12 @@
 import { createLogger } from '@magic-prompt/logger';
 import { NextResponse, type NextRequest } from 'next/server';
 
+import {
+  anonDistinctId,
+  compactProperties,
+  getEmailDomain,
+  trackAuthEvent,
+} from '@/features/auth/lib/analytics';
 import { safeRedirect } from '@/features/auth/lib/safe-redirect';
 import { env } from '@/lib/env';
 import { createClient } from '@/lib/supabase/server';
@@ -8,6 +14,14 @@ import { createClient } from '@/lib/supabase/server';
 export const dynamic = 'force-dynamic';
 
 const log = createLogger('auth:callback');
+
+function ipFromRequest(request: NextRequest): string {
+  const xff = request.headers.get('x-forwarded-for');
+  if (xff) return xff.split(',')[0]?.trim() ?? 'unknown';
+  const real = request.headers.get('x-real-ip');
+  if (real) return real;
+  return 'unknown';
+}
 
 /**
  * OAuth callback — Supabase redirects here after a successful provider
@@ -27,8 +41,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const errorParam = url.searchParams.get('error');
   const errorDescription = url.searchParams.get('error_description');
 
+  const ip = ipFromRequest(request);
+
   if (errorParam) {
     log.warn({ errorParam, errorDescription }, 'OAuth provider returned an error');
+    trackAuthEvent({
+      distinctId: anonDistinctId(ip),
+      event: 'auth.oauth.google.failed',
+      properties: compactProperties({ errorCode: errorParam, ip }),
+    });
     const dest = new URL('/login', env.NEXT_PUBLIC_APP_URL);
     dest.searchParams.set('error', 'oauth_failed');
     return NextResponse.redirect(dest);
@@ -36,19 +57,38 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   if (!code) {
     log.warn({}, 'callback hit without a code');
+    trackAuthEvent({
+      distinctId: anonDistinctId(ip),
+      event: 'auth.oauth.google.failed',
+      properties: compactProperties({ errorCode: 'no_code', ip }),
+    });
     return NextResponse.redirect(new URL('/login', env.NEXT_PUBLIC_APP_URL));
   }
 
   const supabase = createClient();
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error) {
     log.warn({ supabaseCode: error.code }, 'failed to exchange OAuth code');
+    trackAuthEvent({
+      distinctId: anonDistinctId(ip),
+      event: 'auth.oauth.google.failed',
+      properties: compactProperties({ errorCode: error.code ?? 'exchange_failed', ip }),
+    });
     const dest = new URL('/login', env.NEXT_PUBLIC_APP_URL);
     dest.searchParams.set('error', 'oauth_failed');
     return NextResponse.redirect(dest);
   }
 
   log.info({}, 'OAuth code exchanged — session established');
+
+  const userId = data?.user?.id;
+  const emailDomain = getEmailDomain(data?.user?.email);
+  trackAuthEvent({
+    distinctId: userId ?? anonDistinctId(ip),
+    event: 'auth.oauth.google.completed',
+    properties: compactProperties({ userId, emailDomain }),
+  });
+
   return NextResponse.redirect(new URL(next, env.NEXT_PUBLIC_APP_URL));
 }

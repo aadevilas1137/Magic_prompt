@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 
 import { type AuthActionState, authLogger, fieldErrorState } from './_shared';
 
+import { compactProperties, trackAuthEvent } from '@/features/auth/lib/analytics';
 import { mapSupabaseAuthError } from '@/features/auth/lib/errors';
 import { ResetPasswordSchema } from '@/features/auth/lib/validation';
 import { createClient } from '@/lib/supabase/server';
@@ -31,7 +32,7 @@ export async function resetPasswordAction(
   }
 
   const supabase = createClient();
-  const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
+  const { data, error } = await supabase.auth.updateUser({ password: parsed.data.password });
 
   if (error) {
     const mapped = mapSupabaseAuthError(error);
@@ -40,6 +41,14 @@ export async function resetPasswordAction(
   }
 
   log.info({}, 'password reset succeeded');
+
+  const userId = data?.user?.id;
+  trackAuthEvent({
+    distinctId: userId ?? 'anon:reset',
+    event: 'auth.password.reset_completed',
+    properties: compactProperties({ userId }),
+  });
+
   revalidatePath('/', 'layout');
   redirect('/chat');
 }
