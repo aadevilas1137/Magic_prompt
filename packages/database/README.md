@@ -29,6 +29,45 @@ pnpm tsx tooling/scripts/verify-rls.ts
 
 It connects with the anon key and confirms every table returns 0 rows. Exit code 1 if any table leaks data — wire into CI to catch regressions.
 
+## Chat schema additions + trigger (Phase 3)
+
+`migrations/0002_chat_enhancements.sql` adds the production columns needed by the chat surface. See [`ADR-0009`](../../docs/architecture/ADR/0009-chat-data-model.md) for the full rationale.
+
+### `chats` columns
+
+| Column            | Type                               | Purpose                                                                               |
+| ----------------- | ---------------------------------- | ------------------------------------------------------------------------------------- |
+| `summary`         | text NULL                          | Reserved for Phase 6+ summarisation.                                                  |
+| `last_message_at` | timestamptz NOT NULL DEFAULT NOW() | Sidebar sort key. Maintained by trigger (below) — never write it directly.            |
+| `is_archived`     | boolean NOT NULL DEFAULT FALSE     | Soft-delete flag. Archived chats hide from the default list but stay restorable.      |
+| `model`           | varchar(64) NULL                   | Last model used in this chat (e.g. `gpt-4o`). Stamped by the chat route on each turn. |
+
+Partial index: `idx_chats_user_last_message ON chats(user_id, last_message_at DESC) WHERE is_archived = FALSE`. The sidebar's primary query is an index-only scan.
+
+### `messages` columns
+
+| Column              | Type                                           | Purpose                                                                                    |
+| ------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `token_count`       | integer NULL                                   | Completion tokens from the LLM. Cost telemetry.                                            |
+| `model`             | varchar(64) NULL                               | Concrete model id used for this turn.                                                      |
+| `error`             | text NULL                                      | Set when a stream errored mid-flight. `content` may hold partial text; UI shows retry CTA. |
+| `parent_message_id` | uuid NULL FK → messages(id) ON DELETE SET NULL | Self-FK reserved for Phase 6+ regenerate/branch semantics. Always NULL today.              |
+| `latency_ms`        | integer NULL                                   | First-token-to-finish latency.                                                             |
+
+Index: `idx_messages_parent ON messages(parent_message_id)` for branch lookups.
+
+### Trigger `on_message_inserted`
+
+`AFTER INSERT ON messages` fires `public.bump_chat_last_message_at()`, which updates `chats.last_message_at = NEW.created_at` and `chats.updated_at = NOW()` for the parent chat. `SECURITY DEFINER` because RLS would otherwise prevent the cross-table update from the inserting role.
+
+**Verify Phase 3 schema is live** any time:
+
+```bash
+pnpm tsx tooling/scripts/verify-chat-schema.ts
+```
+
+Checks: all 9 new columns + 2 new indexes + the trigger are present, then re-runs RLS through the anon client to confirm chats/messages still block.
+
 ## Two-URL pattern (`DATABASE_URL` vs `MIGRATE_DATABASE_URL`)
 
 This package uses **two separate Postgres connection strings**, each tuned for a different lifecycle. **Configure both in `apps/web/.env.local`.**

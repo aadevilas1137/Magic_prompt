@@ -63,8 +63,10 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
       <body className={`${inter.variable} bg-background text-foreground font-sans antialiased`}>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Providers>
-            <Header />
-            {children}
+            <div className="flex min-h-screen flex-col">
+              <Header />
+              <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+            </div>
             <Toaster richColors closeButton position="top-right" />
           </Providers>
         </NextIntlClientProvider>

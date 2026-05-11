@@ -103,3 +103,22 @@ The full architecture lives in [`docs/architecture/ADR/0006-auth-flow.md`](archi
 - **No PII in logs.** Email is OK (it's the user's identifier and shows up in toasts anyway). Never log passwords, tokens, magic links, or whatever the user typed into a form.
 - **Defense in depth: middleware + page guard + RLS.** Auth-required pages call `requireUser('/chat')` even though middleware already redirects unauthenticated visitors. RLS in the database is the third layer.
 - **`prompt_logs` has zero client access.** It's enforced by a `RESTRICTIVE` deny-all RLS policy. Service-role-only writes from the IPE pipeline (Phase 4+).
+
+## Streaming + AI SDK (Phase 3+)
+
+The chat surface uses the Vercel AI SDK (v6). The full architectural rationale is in [`ADR-0008`](architecture/ADR/0008-streaming-with-vercel-ai-sdk.md). Day-to-day rules:
+
+- **Streaming routes live in `/api/*` Route Handlers, never in Server Actions.** Server Actions don't support streaming responses; the AI SDK's `useChat` client expects a Route Handler endpoint.
+- **Always declare runtime + maxDuration** on streaming routes:
+  ```ts
+  export const runtime = 'nodejs'; // Drizzle/postgres-js requires Node
+  export const maxDuration = 60; // Vercel Pro cap; Hobby is 10s — document on routes that depend on it
+  ```
+- **Persist the user message BEFORE calling the LLM.** If the LLM call fails, the user's input survives in the DB and the UI can offer a clean retry.
+- **Wrap LLM calls through `@magic-prompt/llm`, not the AI SDK directly.** The provider abstraction owns error mapping (OpenAI errors → `AppError`), retry/timeout behaviour, and is the seam where Phase 8+ multi-provider routing lands. Route handlers call `provider.stream(...)`, not `streamText(...)` from `ai`.
+- **`onFinish` is where you write the assistant message to the DB.** Use the normalised `usage` (with `promptTokens`/`completionTokens`/`totalTokens` regardless of SDK version) — the provider hides the v3→v6 rename of `inputTokens`/`outputTokens` from callers.
+- **Treat LLM output as untrusted.** Always render through `MarkdownRenderer` (in `features/chat/components/markdown/`) which combines `react-markdown` (no raw HTML by default), `urlTransform` (blocks `javascript:` / `data:` / `vbscript:` URLs), and `isomorphic-dompurify` as belt-and-braces.
+- **Never log message content.** Chat-side Pino calls include `chatId`, `userId`, `err.message`, model id, token counts, latency. The body of a turn never appears in logs.
+- **Provider construction reads `OPENAI_API_KEY` from `process.env` at call time.** Don't import `env.ts` into provider unit tests — pass `new OpenAIProvider({ sdk: fakeSdk })` to bypass the env check.
+- **Title generation is fire-and-forget.** Call `void generateChatTitle({...})` from `onFinish`. Failures log a warn and keep the previous title; never block the response on title gen.
+- **Pino transports: opt-in only.** `pino-pretty` spawns a worker thread that Next dev's webpack can't always trace. The default logger is JSON-only; set `LOGGER_PRETTY=true` or pipe `pnpm dev | pino-pretty` if you want colour locally.

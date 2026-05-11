@@ -1,31 +1,54 @@
 import { AppError, ErrorCode } from '@magic-prompt/shared';
 
-import type { LLMProvider, LLMRequest, LLMResponse } from './types';
+import { OpenAIProvider } from './providers/openai';
 
-export interface LLMRouter {
-  route(req: LLMRequest): Promise<LLMResponse>;
-}
+import type { LLMProvider, ProviderName } from './types';
 
 /**
- * LLM router — STUB.
+ * LLM router — minimal Phase 3 implementation.
  *
- * TODO(phase-5): implement provider selection based on the IPE pipeline output
- * (domain, complexity, cost ceiling, capability requirements). For now this
- * accepts a registry but always rejects with NOT_IMPLEMENTED.
+ * Phase 3 ships a single provider (OpenAI). The router exists as a seam so
+ * Phase 5+ can introduce real routing (domain → provider, capability matching,
+ * cost ceilings, fallback chains) without touching the chat route handler.
+ *
+ * Today it's a thin factory: `getDefaultProvider()` returns a lazily-built
+ * OpenAI provider; `getProvider(name)` switches on the provider name.
  */
-export class StubLLMRouter implements LLMRouter {
-  public constructor(private readonly providers: ReadonlyMap<string, LLMProvider>) {}
+export class LLMRouter {
+  private cache: Partial<Record<ProviderName, LLMProvider>> = {};
 
-  public async route(_req: LLMRequest): Promise<LLMResponse> {
-    if (this.providers.size === 0) {
-      throw new AppError({
-        code: ErrorCode.INTERNAL_ERROR,
-        message: 'LLMRouter has no providers registered.',
-      });
+  public getDefaultProvider(): LLMProvider {
+    return this.getProvider('openai');
+  }
+
+  public getProvider(name: ProviderName): LLMProvider {
+    const existing = this.cache[name];
+    if (existing) return existing;
+
+    if (name === 'openai') {
+      const provider = new OpenAIProvider();
+      this.cache[name] = provider;
+      return provider;
     }
     throw new AppError({
       code: ErrorCode.NOT_IMPLEMENTED,
-      message: 'LLMRouter.route is a Phase 1 stub.',
+      message: `Provider "${name}" is not yet implemented. Phase 5+ adds Anthropic / Google.`,
     });
   }
+}
+
+let defaultRouter: LLMRouter | null = null;
+
+/**
+ * Process-wide singleton. Tests construct their own `LLMRouter` (or inject a
+ * provider) instead of touching this.
+ */
+export function getDefaultRouter(): LLMRouter {
+  if (!defaultRouter) defaultRouter = new LLMRouter();
+  return defaultRouter;
+}
+
+/** Test helper — clears the cached singleton so a fresh router is built next call. */
+export function __resetRouterForTests(): void {
+  defaultRouter = null;
 }

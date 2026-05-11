@@ -31,7 +31,16 @@ const EnvSchema = z.object({
   // when this is unset.
   MIGRATE_DATABASE_URL: optionalString(),
 
-  OPENAI_API_KEY: optionalString(),
+  // --- OpenAI (required from Phase 3 onward — `/api/chat` won't function
+  // without a valid key. Must start with `sk-` and be ≥20 chars; both classic
+  // `sk-…` and project-scoped `sk-proj-…` keys match.)
+  OPENAI_API_KEY: z.string().min(20).startsWith('sk-'),
+  OPENAI_MODEL: z.string().min(1).default('gpt-4o'),
+  OPENAI_TITLE_MODEL: z.string().min(1).default('gpt-4o-mini'),
+
+  // --- Chat
+  CHAT_CONTEXT_WINDOW: z.coerce.number().int().positive().max(100).default(20),
+  CHAT_MAX_MESSAGE_LENGTH: z.coerce.number().int().positive().default(8000),
 
   NEXT_PUBLIC_SENTRY_DSN: optionalUrl(),
   SENTRY_AUTH_TOKEN: optionalString(),
