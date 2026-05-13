@@ -13,9 +13,9 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],
-      // Phase 3 tightening — bumping from 40/35/40/40 to 50/45/50/50 per spec.
+      // Phase 4 tightening — bumping from 50/45/50/50 to 55/50/55/55 per spec.
       // Final target per ADR-0005 is lines:80 / branches:75.
-      thresholds: { lines: 50, branches: 45, functions: 50, statements: 50 },
+      thresholds: { lines: 55, branches: 50, functions: 55, statements: 55 },
       include: ['src/**/*.{ts,tsx}'],
       exclude: [
         'src/**/*.d.ts',

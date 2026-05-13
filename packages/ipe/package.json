@@ -15,17 +15,33 @@
   "scripts": {
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "clean": "rimraf .turbo *.tsbuildinfo"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "clean": "rimraf .turbo coverage *.tsbuildinfo"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^2",
+    "@magic-prompt/analytics": "workspace:*",
+    "@magic-prompt/database": "workspace:*",
     "@magic-prompt/llm": "workspace:*",
-    "@magic-prompt/shared": "workspace:*"
+    "@magic-prompt/logger": "workspace:*",
+    "@magic-prompt/shared": "workspace:*",
+    "@supabase/supabase-js": "^2.47.10",
+    "ai": "^6",
+    "drizzle-orm": "^0.36.4",
+    "p-timeout": "^6.1.4",
+    "postgres": "^3.4.5",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@magic-prompt/eslint-config": "workspace:*",
     "@magic-prompt/tsconfig": "workspace:*",
+    "@types/node": "^20.17.10",
+    "@vitest/coverage-v8": "^2.1.8",
     "eslint": "^9.17.0",
     "rimraf": "^6.0.1",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
   }
 }

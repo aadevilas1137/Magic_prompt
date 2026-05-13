@@ -42,6 +42,41 @@ const EnvSchema = z.object({
   CHAT_CONTEXT_WINDOW: z.coerce.number().int().positive().max(100).default(20),
   CHAT_MAX_MESSAGE_LENGTH: z.coerce.number().int().positive().default(8000),
 
+  // --- IPE (Phase 4 — Invisible Prompt Engine)
+  // Master switch. When false, `/api/chat` behaves identically to Phase 3
+  // (raw LLM, static system prompt). Defaults off for safe production rollout.
+  IPE_ENABLED: z.coerce.boolean().default(false),
+  // If IPE throws mid-pipeline, fall back to the Phase 3 raw-LLM path so the
+  // user still gets a response. Turn off only when debugging.
+  IPE_FALLBACK_ON_ERROR: z.coerce.boolean().default(true),
+  // Per-layer timeouts. Layer 1 (intent) + Layer 2 (classifier) hit gpt-4o-mini;
+  // 2s is generous for `gpt-4o-mini` (typically ~300-500ms). p-timeout aborts
+  // and triggers fallback if exceeded.
+  IPE_INTENT_TIMEOUT_MS: z.coerce.number().int().positive().default(2000),
+  IPE_CLASSIFIER_TIMEOUT_MS: z.coerce.number().int().positive().default(2000),
+  // Layer 5 sampling rate for LLM-as-judge quality scoring. 0.1 = 10% of
+  // responses get a (sampled, async, gpt-4o-mini) judgment. The other 90%
+  // rely on heuristic scoring only. Range 0-1; 0 disables LLM judge entirely.
+  IPE_QUALITY_SAMPLE_RATE: z.coerce.number().min(0).max(1).default(0.1),
+  // Master switch for the `?showMagic=1` debug panel. Even with this on,
+  // the page-level admin gate still applies. Defaults off for safety.
+  IPE_DEBUG_MODE: z.coerce.boolean().default(false),
+  // Pipeline schema version stamped on every `prompt_logs` row. Bump when the
+  // pipeline architecture changes (e.g. add Layer 6, swap a template engine).
+  IPE_PIPELINE_VERSION: z.string().min(1).default('v1'),
+  // Comma-separated admin email list — gates `?showMagic=1`. Phase 8 RBAC will
+  // replace this. Default includes the project owner so dev workflow doesn't
+  // require setting a var locally. Empty string = no one (production hardening).
+  IPE_ADMIN_EMAILS: z
+    .string()
+    .default('aadevilasrao1137@gmail.com')
+    .transform((s) =>
+      s
+        .split(',')
+        .map((e) => e.trim().toLowerCase())
+        .filter((e) => e.length > 0),
+    ),
+
   NEXT_PUBLIC_SENTRY_DSN: optionalUrl(),
   SENTRY_AUTH_TOKEN: optionalString(),
 

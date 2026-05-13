@@ -1,4 +1,5 @@
 import { chats, messages as messagesTable } from '@magic-prompt/database';
+import { runIPE, type IPEConfig, type IPEInput, type IPEResult } from '@magic-prompt/ipe';
 import { OpenAIProvider } from '@magic-prompt/llm';
 import { createLogger } from '@magic-prompt/logger';
 import { AppError, ErrorCode, HTTP_STATUS_BY_CODE, isAppError } from '@magic-prompt/shared';
@@ -15,28 +16,21 @@ import { env } from '@/lib/env';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
-// Vercel Hobby caps function timeout at 10s; the chat surface deploys to
-// Pro/Enterprise at launch (see PHASE_3_REPORT.md §"Known limits").
 
 const log = createLogger('api:chat');
 
 /**
- * POST /api/chat — streaming chat completion.
+ * POST /api/chat — streaming chat completion with optional IPE.
  *
- * Flow (in strict order):
- *   1. Auth via getUser() → 401 if anon
- *   2. Zod-parse request body → 400 on shape errors
- *   3. Verify chat ownership via Drizzle → 403 on cross-user attempts, 404 on missing
- *   4. Load last N persisted messages (CHAT_CONTEXT_WINDOW); these are the
- *      authoritative context — never trust the client-sent history blindly.
- *   5. Rate-limit per user (60 sends per 60s) → 429
- *   6. Persist the incoming user message FIRST. If the LLM call fails the
- *      user message still survives + can be retried.
- *   7. Call OpenAIProvider.stream() with onFinish persisting the assistant
- *      message + token/latency metrics. On error, record a partial row.
- *   8. Return the data-stream response that `useChat` consumes.
- *
- * No message content is ever logged. Token counts + model + chat ids are fine.
+ * Flow:
+ *   1. Auth + Zod + chat ownership + rate-limit + persist user message (Phase 3 baseline).
+ *   2. If `env.IPE_ENABLED`:
+ *      - Run the 5-layer IPE pipeline (Layers 1-3 ~1.5s).
+ *      - On any throw + `env.IPE_FALLBACK_ON_ERROR=true`, fall back to Phase 3 path.
+ *      - The user's UI is identical either way — the magic prompt NEVER reaches the wire.
+ *   3. Stream the LLM response (Layer 4 = OpenAIProvider.stream).
+ *   4. In `onFinish`, persist assistant message + call `ipeResult.onStreamComplete()`
+ *      which runs Layer 5 (quality validation) and writes the prompt_logs row.
  */
 export async function POST(request: Request): Promise<Response> {
   let body: unknown;
@@ -68,7 +62,6 @@ export async function POST(request: Request): Promise<Response> {
 
   const { chatId, messages: clientMessages } = parsed.data;
 
-  // Rate limit per user — chat sends are the primary cost driver.
   const rl = checkRateLimit('sendMessage', user.id, ChatRateLimits.sendMessage);
   if (!rl.allowed) {
     return new Response(
@@ -88,7 +81,6 @@ export async function POST(request: Request): Promise<Response> {
 
   const db = getDb();
 
-  // Verify chat ownership (authoritative — RLS is the safety net, this is the gate).
   const chatRow = await db
     .select({
       id: chats.id,
@@ -121,12 +113,21 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
-  // Persist the user message before the LLM call so it survives any failure.
-  await db.insert(messagesTable).values({
-    chatId,
-    role: 'user',
-    content: lastClient.content,
-  });
+  // Persist the user message — capture id for downstream IPE messageId.
+  const [persistedUserMessage] = await db
+    .insert(messagesTable)
+    .values({ chatId, role: 'user', content: lastClient.content })
+    .returning({ id: messagesTable.id });
+
+  if (!persistedUserMessage) {
+    return errorResponse(
+      new AppError({
+        code: ErrorCode.INTERNAL_ERROR,
+        message: 'Failed to persist user message.',
+      }),
+    );
+  }
+
   trackChatEvent({
     distinctId: user.id,
     event: 'message.sent',
@@ -137,7 +138,7 @@ export async function POST(request: Request): Promise<Response> {
     }),
   });
 
-  // Authoritative context — read fresh from DB (don't trust client state).
+  // Authoritative history — read fresh from DB.
   const historyRows = await db
     .select({
       role: messagesTable.role,
@@ -147,12 +148,60 @@ export async function POST(request: Request): Promise<Response> {
     .from(messagesTable)
     .where(eq(messagesTable.chatId, chatId))
     .orderBy(asc(messagesTable.createdAt), asc(messagesTable.id))
-    .limit(env.CHAT_CONTEXT_WINDOW + 5); // small headroom over the window cap
+    .limit(env.CHAT_CONTEXT_WINDOW + 5);
 
-  const context = buildLLMContext(historyRows, env.CHAT_CONTEXT_WINDOW);
+  // -------- IPE plug-in point --------
+  let ipeResult: IPEResult | null = null;
+  let context;
+  if (env.IPE_ENABLED && env.DATABASE_URL) {
+    const ipeInput: IPEInput = {
+      userMessage: lastClient.content,
+      history: historyRows,
+      userId: user.id,
+      chatId,
+      messageId: persistedUserMessage.id,
+    };
+    const ipeConfig: IPEConfig = {
+      openAIApiKey: env.OPENAI_API_KEY,
+      intentModel: env.OPENAI_TITLE_MODEL,
+      classifierModel: env.OPENAI_TITLE_MODEL,
+      judgeModel: env.OPENAI_TITLE_MODEL,
+      intentTimeoutMs: env.IPE_INTENT_TIMEOUT_MS,
+      classifierTimeoutMs: env.IPE_CLASSIFIER_TIMEOUT_MS,
+      qualitySampleRate: env.IPE_QUALITY_SAMPLE_RATE,
+      pipelineVersion: env.IPE_PIPELINE_VERSION,
+    };
+    try {
+      ipeResult = await runIPE({
+        input: ipeInput,
+        config: ipeConfig,
+        dbConnectionString: env.DATABASE_URL,
+      });
+      context = ipeResult.messages;
+    } catch (err) {
+      log.error(
+        { chatId, err: err instanceof Error ? err.message : String(err) },
+        'IPE pipeline threw — deciding fallback',
+      );
+      if (env.IPE_FALLBACK_ON_ERROR) {
+        log.warn({ chatId }, 'IPE_FALLBACK_ON_ERROR=true → using Phase 3 raw LLM path');
+        ipeResult = null;
+        context = buildLLMContext(historyRows, env.CHAT_CONTEXT_WINDOW);
+      } else {
+        return errorResponse(
+          isAppError(err)
+            ? err
+            : new AppError({
+                code: ErrorCode.EXTERNAL_SERVICE_ERROR,
+                message: 'IPE pipeline failed and fallback is disabled.',
+              }),
+        );
+      }
+    }
+  } else {
+    context = buildLLMContext(historyRows, env.CHAT_CONTEXT_WINDOW);
+  }
 
-  // Spawn the provider on each request — cheap, ensures any env rotation
-  // (key, model) takes effect without process restart. Phase 5+ may cache.
   let provider: OpenAIProvider;
   try {
     provider = new OpenAIProvider({ defaultModel: env.OPENAI_MODEL });
@@ -183,7 +232,6 @@ export async function POST(request: Request): Promise<Response> {
           latencyMs,
         });
 
-        // Stamp the chat's last-used model for future-resume UX hints.
         await db
           .update(chats)
           .set({ model, updatedAt: new Date() })
@@ -203,7 +251,21 @@ export async function POST(request: Request): Promise<Response> {
           }),
         });
 
-        // Trigger title generation after the first exchange (async, non-blocking).
+        // Layer 5 + prompt_logs persist (best-effort, after assistant row is saved).
+        if (ipeResult) {
+          try {
+            await ipeResult.onStreamComplete({
+              assistantContent: text,
+              llmUsed: `openai:${model}`,
+            });
+          } catch (ipeErr) {
+            log.error(
+              { chatId, err: ipeErr instanceof Error ? ipeErr.message : String(ipeErr) },
+              'IPE onStreamComplete threw (telemetry lost; user flow unaffected)',
+            );
+          }
+        }
+
         if (isDefaultTitle(currentTitle)) {
           void generateChatTitle({
             userId: user.id,
@@ -224,7 +286,6 @@ export async function POST(request: Request): Promise<Response> {
       }
     },
     onError: async (err) => {
-      // Stream-mid failure. Record a partial-error row so the UI can show a retry.
       log.warn({ chatId, err: err instanceof Error ? err.message : String(err) }, 'stream errored');
       try {
         await db.insert(messagesTable).values({

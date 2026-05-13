@@ -397,12 +397,42 @@ importers:
 
   packages/ipe:
     dependencies:
+      '@ai-sdk/openai':
+        specifier: ^2
+        version: 2.0.106(zod@3.25.76)
+      '@magic-prompt/analytics':
+        specifier: workspace:*
+        version: link:../analytics
+      '@magic-prompt/database':
+        specifier: workspace:*
+        version: link:../database
       '@magic-prompt/llm':
         specifier: workspace:*
         version: link:../llm
+      '@magic-prompt/logger':
+        specifier: workspace:*
+        version: link:../logger
       '@magic-prompt/shared':
         specifier: workspace:*
         version: link:../shared
+      '@supabase/supabase-js':
+        specifier: ^2.47.10
+        version: 2.105.3
+      ai:
+        specifier: ^6
+        version: 6.0.177(zod@3.25.76)
+      drizzle-orm:
+        specifier: ^0.36.4
+        version: 0.36.4(@opentelemetry/api@1.9.1)(@types/pg@8.6.1)(@types/react@18.3.28)(postgres@3.4.9)(react@18.3.1)
+      p-timeout:
+        specifier: ^6.1.4
+        version: 6.1.4
+      postgres:
+        specifier: ^3.4.5
+        version: 3.4.9
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
     devDependencies:
       '@magic-prompt/eslint-config':
         specifier: workspace:*
@@ -410,6 +440,12 @@ importers:
       '@magic-prompt/tsconfig':
         specifier: workspace:*
         version: link:../config/typescript
+      '@types/node':
+        specifier: ^20.17.10
+        version: 20.19.39
+      '@vitest/coverage-v8':
+        specifier: ^2.1.8
+        version: 2.1.9(vitest@2.1.9(@types/node@20.19.39)(jsdom@29.1.1)(msw@2.14.3(@types/node@20.19.39)(typescript@5.9.3))(terser@5.46.2))
       eslint:
         specifier: ^9.17.0
         version: 9.39.4(jiti@2.6.1)
@@ -419,6 +455,9 @@ importers:
       typescript:
         specifier: ^5.7.2
         version: 5.9.3
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@20.19.39)(jsdom@29.1.1)(msw@2.14.3(@types/node@20.19.39)(typescript@5.9.3))(terser@5.46.2)
 
   packages/llm:
     dependencies:
@@ -602,8 +641,20 @@ packages:
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
+  '@ai-sdk/openai@2.0.106':
+    resolution: {integrity: sha512-EFC0rpo1wfe4HIz5KZCE72edP2J7fOeR7wPXzjCDljaTRB1wectKDIKRLowpU4F0mbcJ+XScAsoYNPK/Z20aVQ==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
   '@ai-sdk/openai@3.0.63':
     resolution: {integrity: sha512-4yY/m8a57MNNVoJCsXuNblKf6BO4yuAuLKRX4tzSNffBEBSp1FlcWdPE0Z4FkqUeS0AJhYSSqp0GIiA/cIcDNA==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
+  '@ai-sdk/provider-utils@3.0.25':
+    resolution: {integrity: sha512-CvsRu+32Y8a167s+lrIBtsybvgTHp8j9y+6BeTvLeoW3Q+okw/b4CnNUFOLIXsRaKHQKAH+IHNJPYWywfpw0LA==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -613,6 +664,10 @@ packages:
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
+
+  '@ai-sdk/provider@2.0.3':
+    resolution: {integrity: sha512-h88OPkavHTiN9tMn2l5awAznGB0lXzjcLhgR1/rvjB2zlLprsNxbM2tt6OJsHUxduLC3klq0/eqaSf6fX5XVww==}
+    engines: {node: '>=18'}
 
   '@ai-sdk/provider@3.0.10':
     resolution: {integrity: sha512-Q3BZ27qfpYqnCYGvE3vt+Qi6LGOF9R5Nmzn+9JoM1lCRsD9mYaIhfJLkSunN48nfGXJ6n+XNV0J/XVpqGQl7Dw==}
@@ -5201,6 +5256,10 @@ packages:
     resolution: {integrity: sha512-wPrq66Llhl7/4AGC6I+cqxT07LhXvWL08LNXz1fENOw0Ap4sRZZ/gZpTTJ5jpurzzzfS2W/Ge9BY3LgLjCShcw==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
 
+  p-timeout@6.1.4:
+    resolution: {integrity: sha512-MyIV3ZA/PmyBN/ud8vV9XzwTrNtR4jFrObymZYnZqMmW0zA8Z17vnT0rBgFE/TlohB+YCHqXMgZzb3Csp49vqg==}
+    engines: {node: '>=14.16'}
+
   package-json-from-dist@1.0.1:
     resolution: {integrity: sha512-UEZIS3/by4OC8vL3P2dTXRETpebLI2NiI5vIrjaD/5UtrkFX/tNbwjTSRAGC/+7CAo2pIcBaRgWmcBBHcsaCIw==}
 
@@ -6525,10 +6584,23 @@ snapshots:
       '@vercel/oidc': 3.2.0
       zod: 3.25.76
 
+  '@ai-sdk/openai@2.0.106(zod@3.25.76)':
+    dependencies:
+      '@ai-sdk/provider': 2.0.3
+      '@ai-sdk/provider-utils': 3.0.25(zod@3.25.76)
+      zod: 3.25.76
+
   '@ai-sdk/openai@3.0.63(zod@3.25.76)':
     dependencies:
       '@ai-sdk/provider': 3.0.10
       '@ai-sdk/provider-utils': 4.0.27(zod@3.25.76)
+      zod: 3.25.76
+
+  '@ai-sdk/provider-utils@3.0.25(zod@3.25.76)':
+    dependencies:
+      '@ai-sdk/provider': 2.0.3
+      '@standard-schema/spec': 1.1.0
+      eventsource-parser: 3.0.8
       zod: 3.25.76
 
   '@ai-sdk/provider-utils@4.0.27(zod@3.25.76)':
@@ -6537,6 +6609,10 @@ snapshots:
       '@standard-schema/spec': 1.1.0
       eventsource-parser: 3.0.8
       zod: 3.25.76
+
+  '@ai-sdk/provider@2.0.3':
+    dependencies:
+      json-schema: 0.4.0
 
   '@ai-sdk/provider@3.0.10':
     dependencies:
@@ -8856,6 +8932,24 @@ snapshots:
       test-exclude: 7.0.2
       tinyrainbow: 1.2.0
       vitest: 2.1.9(@types/node@20.19.39)(jsdom@25.0.1)(msw@2.14.3(@types/node@20.19.39)(typescript@5.9.3))(terser@5.46.2)
+    transitivePeerDependencies:
+      - supports-color
+
+  '@vitest/coverage-v8@2.1.9(vitest@2.1.9(@types/node@20.19.39)(jsdom@29.1.1)(msw@2.14.3(@types/node@20.19.39)(typescript@5.9.3))(terser@5.46.2))':
+    dependencies:
+      '@ampproject/remapping': 2.3.0
+      '@bcoe/v8-coverage': 0.2.3
+      debug: 4.4.3
+      istanbul-lib-coverage: 3.2.2
+      istanbul-lib-report: 3.0.1
+      istanbul-lib-source-maps: 5.0.6
+      istanbul-reports: 3.2.0
+      magic-string: 0.30.21
+      magicast: 0.3.5
+      std-env: 3.10.0
+      test-exclude: 7.0.2
+      tinyrainbow: 1.2.0
+      vitest: 2.1.9(@types/node@20.19.39)(jsdom@29.1.1)(msw@2.14.3(@types/node@20.19.39)(typescript@5.9.3))(terser@5.46.2)
     transitivePeerDependencies:
       - supports-color
 
@@ -11481,6 +11575,8 @@ snapshots:
     dependencies:
       p-limit: 4.0.0
 
+  p-timeout@6.1.4: {}
+
   package-json-from-dist@1.0.1: {}
 
   parent-module@1.0.1:
@@ -12686,6 +12782,42 @@ snapshots:
     optionalDependencies:
       '@types/node': 20.19.39
       jsdom: 25.0.1
+    transitivePeerDependencies:
+      - less
+      - lightningcss
+      - msw
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - supports-color
+      - terser
+
+  vitest@2.1.9(@types/node@20.19.39)(jsdom@29.1.1)(msw@2.14.3(@types/node@20.19.39)(typescript@5.9.3))(terser@5.46.2):
+    dependencies:
+      '@vitest/expect': 2.1.9
+      '@vitest/mocker': 2.1.9(msw@2.14.3(@types/node@20.19.39)(typescript@5.9.3))(vite@5.4.21(@types/node@20.19.39)(terser@5.46.2))
+      '@vitest/pretty-format': 2.1.9
+      '@vitest/runner': 2.1.9
+      '@vitest/snapshot': 2.1.9
+      '@vitest/spy': 2.1.9
+      '@vitest/utils': 2.1.9
+      chai: 5.3.3
+      debug: 4.4.3
+      expect-type: 1.3.0
+      magic-string: 0.30.21
+      pathe: 1.1.2
+      std-env: 3.10.0
+      tinybench: 2.9.0
+      tinyexec: 0.3.2
+      tinypool: 1.1.1
+      tinyrainbow: 1.2.0
+      vite: 5.4.21(@types/node@20.19.39)(terser@5.46.2)
+      vite-node: 2.1.9(@types/node@20.19.39)(terser@5.46.2)
+      why-is-node-running: 2.3.0
+    optionalDependencies:
+      '@types/node': 20.19.39
+      jsdom: 29.1.1
     transitivePeerDependencies:
       - less
       - lightningcss
