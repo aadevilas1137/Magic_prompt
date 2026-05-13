@@ -21,6 +21,23 @@ const REDACT_PATHS = [
   'res.headers["set-cookie"]',
 ];
 
+/**
+ * `pino-pretty` opt-in. We *don't* enable it by default in dev anymore: Pino's
+ * pretty transport spawns a worker thread via `thread-stream`, and Next.js 14
+ * dev mode can't always trace the worker chunk through webpack — the result
+ * is intermittent `Cannot find module '.next/server/vendor-chunks/lib/worker.js'`
+ * crashes in route handlers that import the logger.
+ *
+ * If you want pretty terminal output during dev, pipe the JSON through
+ * `pino-pretty` externally:
+ *
+ *   pnpm --filter @magic-prompt/web dev | pino-pretty
+ *
+ * Or set `LOGGER_PRETTY=true` to opt back in (e.g. for CLI scripts that
+ * don't run inside Next).
+ */
+const wantPretty = process.env.LOGGER_PRETTY === 'true';
+
 function buildOptions(): LoggerOptions {
   const base: LoggerOptions = {
     level: process.env.LOG_LEVEL ?? (isProduction ? 'info' : 'debug'),
@@ -32,7 +49,7 @@ function buildOptions(): LoggerOptions {
     base: { service: 'magic-prompt' },
   };
 
-  if (!isProduction) {
+  if (wantPretty && !isProduction) {
     return {
       ...base,
       transport: {

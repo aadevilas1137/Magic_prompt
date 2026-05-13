@@ -5,9 +5,14 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { env } from '@/lib/env';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
+
+// `NEXT_PUBLIC_APP_URL` is inlined by Next at build time. Reading it directly
+// from `process.env` keeps this client component from importing `@/lib/env`,
+// which would pull the strict Zod parse (including required `OPENAI_API_KEY`)
+// into the browser bundle and crash on hydration.
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
 
 interface GoogleOAuthButtonProps {
   readonly redirectTo?: string | undefined;
@@ -23,7 +28,7 @@ export function GoogleOAuthButton({ redirectTo, className, children }: GoogleOAu
     setPending(true);
     try {
       const supabase = createClient();
-      const callbackUrl = new URL('/auth/callback', env.NEXT_PUBLIC_APP_URL);
+      const callbackUrl = new URL('/auth/callback', APP_URL);
       if (redirectTo) callbackUrl.searchParams.set('redirect', redirectTo);
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',

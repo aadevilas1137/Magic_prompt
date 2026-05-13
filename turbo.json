@@ -1,24 +1,33 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "globalDependencies": ["**/.env.*local", "tsconfig.json"],
-  "globalEnv": ["NODE_ENV", "CI"],
+  "globalEnv": [
+    "NODE_ENV",
+    "CI",
+    "NEXT_PUBLIC_APP_URL",
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "DATABASE_URL",
+    "MIGRATE_DATABASE_URL",
+    "OPENAI_API_KEY",
+    "OPENAI_MODEL",
+    "OPENAI_TITLE_MODEL",
+    "CHAT_CONTEXT_WINDOW",
+    "CHAT_MAX_MESSAGE_LENGTH",
+    "NEXT_PUBLIC_SENTRY_DSN",
+    "SENTRY_AUTH_TOKEN",
+    "NEXT_PUBLIC_POSTHOG_KEY",
+    "NEXT_PUBLIC_POSTHOG_HOST",
+    "LOG_LEVEL",
+    "E2E_AUTH_EMAIL",
+    "E2E_AUTH_PASSWORD",
+    "PLAYWRIGHT_BASE_URL"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**"],
-      "env": [
-        "NEXT_PUBLIC_APP_URL",
-        "NEXT_PUBLIC_SUPABASE_URL",
-        "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-        "SUPABASE_SERVICE_ROLE_KEY",
-        "DATABASE_URL",
-        "OPENAI_API_KEY",
-        "NEXT_PUBLIC_SENTRY_DSN",
-        "SENTRY_AUTH_TOKEN",
-        "NEXT_PUBLIC_POSTHOG_KEY",
-        "NEXT_PUBLIC_POSTHOG_HOST",
-        "LOG_LEVEL"
-      ]
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
     "dev": {
       "cache": false,

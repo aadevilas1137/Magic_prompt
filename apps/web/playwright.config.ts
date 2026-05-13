@@ -7,12 +7,21 @@ const config: PlaywrightTestConfig = {
   testDir: './tests/e2e',
   fullyParallel: true,
   forbidOnly: isCI,
-  retries: isCI ? 2 : 0,
+  // Local: 1 retry to absorb Next dev's cold-compile-per-route race
+  // (the first chromium hit on a route occasionally exceeds expect timeouts).
+  // CI: 2 retries for general flake tolerance.
+  retries: isCI ? 2 : 1,
   // Per-test timeout — bumped from the 30s default because Next.js dev's
   // first-hit-per-route compile can take 30–60s in cold cache. Subsequent
   // hits are sub-second.
   timeout: 90 * 1000,
-  expect: { timeout: 10 * 1000 },
+  // Phase 3 bump 10s → 60s. With more modules in the dev tree (Phase 3 added
+  // the chat surface + AI SDK + react-markdown + syntax-highlighter + ~30
+  // components), chromium's first-hit-per-route compile occasionally exceeds
+  // 30s before the form is rendered — particularly /signup which loads zxcvbn-ts
+  // language bundles. Mobile-safari runs second on already-warm routes so
+  // doesn't need this headroom.
+  expect: { timeout: 60 * 1000 },
   reporter: isCI ? [['github'], ['html', { open: 'never' }]] : [['list']],
   use: {
     baseURL,

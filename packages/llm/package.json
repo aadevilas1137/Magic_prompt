@@ -18,7 +18,9 @@
     "clean": "rimraf .turbo *.tsbuildinfo"
   },
   "dependencies": {
-    "@magic-prompt/shared": "workspace:*"
+    "@ai-sdk/openai": "^3.0.63",
+    "@magic-prompt/shared": "workspace:*",
+    "ai": "^6.0.177"
   },
   "devDependencies": {
     "@magic-prompt/eslint-config": "workspace:*",

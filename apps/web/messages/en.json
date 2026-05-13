@@ -12,9 +12,73 @@
   },
   "chat": {
     "title": "Chat",
-    "placeholder": "Ask anything… (Phase 1 placeholder — chat is not wired yet)",
+    "placeholder": "Ask anything…",
     "send": "Send",
-    "phase1Notice": "Phase 1 placeholder — chat is not yet wired."
+    "newChat": "New chat",
+    "phase1Notice": "Phase 1 placeholder — chat is not yet wired.",
+    "sidebar": {
+      "title": "Chats",
+      "search": "Search chats",
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "thisWeek": "Previous 7 days",
+      "thisMonth": "Previous 30 days",
+      "older": "Older",
+      "empty": {
+        "title": "No chats yet",
+        "description": "Start a new conversation to get going.",
+        "cta": "New chat"
+      }
+    },
+    "welcome": {
+      "title": "What's on your mind?",
+      "description": "Ask anything. Get extraordinary answers."
+    },
+    "composer": {
+      "placeholder": "Ask anything…",
+      "send": "Send",
+      "stop": "Stop",
+      "shortcutHint": "Press Enter to send, Shift+Enter for new line",
+      "draft": "Draft saved",
+      "charCountWarning": "Approaching message limit"
+    },
+    "message": {
+      "thinking": "Thinking…",
+      "copy": "Copy",
+      "copied": "Copied!",
+      "regenerate": "Regenerate",
+      "edit": "Edit",
+      "good": "Good response",
+      "bad": "Bad response"
+    },
+    "errors": {
+      "generic": "Something went wrong. Please try again.",
+      "rateLimit": "You're sending messages too fast. Please wait a moment.",
+      "networkError": "Network error. Check your connection.",
+      "modelError": "AI is having trouble responding. Please retry.",
+      "contextTooLong": "Conversation is too long. Start a new chat to continue.",
+      "retry": "Retry"
+    },
+    "actions": {
+      "delete": {
+        "title": "Delete chat?",
+        "description": "This will permanently delete this chat and all its messages.",
+        "cancel": "Cancel",
+        "confirm": "Delete"
+      },
+      "rename": {
+        "title": "Rename chat",
+        "label": "Chat name",
+        "save": "Save",
+        "cancel": "Cancel"
+      },
+      "archive": {
+        "title": "Archive chat?",
+        "description": "Archived chats are hidden but can be restored later.",
+        "cancel": "Cancel",
+        "confirm": "Archive"
+      }
+    }
   },
   "auth": {
     "login": {

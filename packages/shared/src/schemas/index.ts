@@ -17,6 +17,10 @@ export const ChatSchema = z.object({
   id: UuidSchema,
   userId: UuidSchema,
   title: z.string().min(1).max(200),
+  summary: z.string().nullable(),
+  model: z.string().max(64).nullable(),
+  isArchived: z.boolean(),
+  lastMessageAt: IsoDateSchema,
   createdAt: IsoDateSchema,
   updatedAt: IsoDateSchema,
 });
@@ -32,6 +36,11 @@ export const MessageSchema = z.object({
   chatId: UuidSchema,
   role: MessageRoleSchema,
   content: z.string().min(1),
+  tokenCount: z.number().int().nonnegative().nullable(),
+  model: z.string().max(64).nullable(),
+  error: z.string().nullable(),
+  parentMessageId: UuidSchema.nullable(),
+  latencyMs: z.number().int().nonnegative().nullable(),
   createdAt: IsoDateSchema,
 });
 

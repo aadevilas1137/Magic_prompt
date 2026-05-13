@@ -13,9 +13,9 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],
-      // Phase 2 tightening — Phase 1 was 0/0/0/0; final target per ADR-0005
-      // is lines:80 / branches:75. Bumping mid-phase as we grow tests.
-      thresholds: { lines: 40, branches: 35, functions: 40, statements: 40 },
+      // Phase 4 tightening — bumping from 50/45/50/50 to 55/50/55/55 per spec.
+      // Final target per ADR-0005 is lines:80 / branches:75.
+      thresholds: { lines: 55, branches: 50, functions: 55, statements: 55 },
       include: ['src/**/*.{ts,tsx}'],
       exclude: [
         'src/**/*.d.ts',
@@ -26,17 +26,20 @@ export default defineConfig({
         // shadcn primitives — we don't author this code; tests upstream cover
         // the contracts. Re-include if we ever fork a component.
         'src/components/ui/**',
-        // app/ pages — mostly RSC composition with minimal logic. Coverage
-        // here is mostly noise (forms/components are tested separately).
+        // app/ pages — mostly RSC composition with minimal logic.
         'src/app/**',
-        // Layout client components — covered via E2E in CI when secrets exist.
+        // Layout client components — covered via E2E.
         'src/components/layout/**',
-        // Auth UI components are React Hook Form + Server Actions; their
-        // behavior is exercised in the E2E job. Component-level unit tests
-        // are a Phase 2.5 follow-up.
+        // Auth UI components — covered via E2E.
         'src/features/auth/components/**',
-        // Hooks placeholders.
-        'src/features/chat/**',
+        // Chat UI components + hooks — covered via E2E and (for the
+        // markdown renderer) a dedicated XSS-defence unit suite.
+        'src/features/chat/components/**',
+        'src/features/chat/hooks/**',
+        // Server actions and queries — exercised via E2E flows; unit-mocking
+        // Drizzle + Supabase JS at this layer is high-cost / low-signal.
+        'src/features/chat/actions/**',
+        'src/features/chat/queries/**',
         'src/hooks/**',
         'src/stores/**',
       ],
